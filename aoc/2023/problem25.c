@@ -68,7 +68,6 @@ int main(void)
     int group1;
     int cut;
     int i;
-    int iterations = 1;
 
     srand((unsigned int)time(NULL));
     while (true)
@@ -119,7 +118,6 @@ int main(void)
             printf("%d\n", group1 * (NUM_VERTICES - group1));
             break;
         }
-        iterations++;
     }
     return EXIT_SUCCESS;
 }
