@@ -1,3 +1,4 @@
+// Refer to: https://www.geeksforgeeks.org/introduction-and-implementation-of-kargers-algorithm-for-minimum-cut/
 // gcc -Werror -std=c99 -Wall -Wextra -O2 -o problem25 problem25_edges.c problem25.c
 #include <stdio.h>
 #include <stdlib.h>
