@@ -1,4 +1,4 @@
-// gcc -Werror -std=c99 -Wall -Wextra -Wno-error=unused-parameter -Wno-error=unused-function -Wno-error=unused-variable -Wconversion -Wno-error=sign-conversion -fsanitize=address,undefined -g3 -o problem25 problem25_edges.c problem25.c
+// gcc -Werror -std=c99 -Wall -Wextra -O2 -o problem25 problem25_edges.c problem25.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -88,14 +88,8 @@ int main(void)
             int set2 = find(sets, edges[i].dest);
             i++;
  
-            if (set1 == set2)
+            if (set1 != set2)
             {
-                //printf("same set: %d, %d\n", set1, set2);
-            }
-            else
-            {
-                //printf("contracting edge %d-%d\n",
-                //       edges[i].src, edges[i].dest);
                 vertices--;
                 union_sets(sets, set1, set2);
             }
@@ -122,8 +116,7 @@ int main(void)
         }
         if (cut == 3)
         {
-            printf("%d, %d\n", cut, iterations);
-            printf("%d, %d, %d\n", group1, NUM_VERTICES - group1, group1 * (NUM_VERTICES - group1));
+            printf("%d\n", group1 * (NUM_VERTICES - group1));
             break;
         }
         iterations++;
