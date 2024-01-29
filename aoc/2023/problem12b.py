@@ -13,10 +13,8 @@ def count(c, m, i, j):
     if (i == 0 or j == 0 or (c == '.' and group[j] == '#')
         or (c == '#' and group[j] == '+' and m < 1)):
         return 0
-
     if (c, m, i, j) in memo:
         return memo[(c, m, i, j)]
-    
     if c == '?':
         sum = count('#', m, i, j) + count('.', m, i, j)
     elif c == '#':
