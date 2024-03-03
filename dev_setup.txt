@@ -1,0 +1,28 @@
+Beyond Compare
+- install
+    https://www.scootersoftware.com/kb/linux_install
+    
+Git
+- add aliases
+    https://git-scm.com/book/en/v2/Git-Basics-Git-Aliases
+- setup prompt for Emacs
+    https://code.mendhak.com/simple-bash-prompt-for-developers-ps1-git/
+- setup Beyond Compare as difftool
+    https://www.scootersoftware.com/kb/vcs
+- set core pager as Emacs
+    https://medium.com/pragmatic-programmers/git-config-core-pager-807e17d64243
+- set Emacs as editor for commit messages
+git config --global core.editor emacs
+- setup SSH keys for Github
+    https://stackoverflow.com/questions/8588768/how-do-i-avoid-the-specification-of-the-username-and-password-at-every-git-push
+- how to avoid having to enter keystore password (if any) each time you connect to a remote server
+    https://superuser.com/questions/8077/how-do-i-set-up-ssh-so-i-dont-have-to-type-my-password
+- how to change author name/email address
+    https://stackoverflow.com/questions/750172/how-do-i-change-the-author-and-committer-name-email-for-multiple-commits
+    
+    
+    
+
+
+    
+    
