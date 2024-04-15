@@ -9,6 +9,10 @@
 #include <assert.h>
 
 #define MAX_NAME 128
+// Adjust this size for a larger table (it must be a power of 2!).
+// To avoid linear search for tables that are close to capacity and since this
+// table can't expand in size, try and keep it around 50% full or so at maximum
+// capacity.
 #define EXP      2
 #define TBL_SIZE (1 << EXP)
 
@@ -65,6 +69,8 @@ static bool lookup(struct hash_tbl *ht, uintptr_t handle, uint32_t *idx)
     }    
 }
 
+// Adds a tag to the table.  Returns true if it was added, false if it's already
+// there or the table is at maximum capacity.
 static bool binder_tag_add(struct hash_tbl *ht, uintptr_t handle, const char *interface)
 {
     uint32_t idx;
@@ -84,6 +90,7 @@ static bool binder_tag_add(struct hash_tbl *ht, uintptr_t handle, const char *in
     return false;
 }
 
+// Removes a tag from the table.  If the tag isn't in the table, does nothing.
 static void binder_tag_remove(struct hash_tbl *ht, uintptr_t handle)
 {
     uint32_t idx;
@@ -95,6 +102,8 @@ static void binder_tag_remove(struct hash_tbl *ht, uintptr_t handle)
     }
 }
 
+// Retrieves a tag from the table and stores a pointer to it in tag. Returns true
+// if the tag was retrieved, false if it's not in the table.
 static bool binder_tag_get(struct hash_tbl *ht, uintptr_t handle, struct binder_tag **tag)
 {
     uint32_t idx;
@@ -113,9 +122,11 @@ int main(void)
     struct hash_tbl ht = { 0 };
     struct binder_tag *tag;
 
-    assert(binder_tag_add(&ht, 10, "IActivityManager"));
+    assert(binder_tag_add(&ht, 0, "IActivityManager"));
     assert(binder_tag_add(&ht, 172, "IMessenger"));
     assert(binder_tag_add(&ht, 2245, "IActivityThread"));
+    // Table filled, can't add anymore.
+    assert(!binder_tag_add(&ht, 2245, "IServiceManager"));
     assert(ht.len == 3);
     assert(binder_tag_get(&ht, 172, &tag));
     assert(tag->handle == 172);
@@ -124,6 +135,22 @@ int main(void)
     binder_tag_remove(&ht, 172);
     assert(ht.len == 2);
     assert(!binder_tag_get(&ht, 172, &tag));
+    binder_tag_remove(&ht, 0);
+    binder_tag_remove(&ht, 2245);
+    assert(!binder_tag_get(&ht, 0, &tag));
+    assert(!binder_tag_get(&ht, 2245, &tag));
+    assert(ht.len == 0);
+    assert(ht.tbl[0] == tombstone);
+    assert(binder_tag_add(&ht, 0, "IActivityManager"));
+    assert(binder_tag_add(&ht, 172, "IMessenger"));
+    assert(binder_tag_add(&ht, 2245, "IActivityThread"));
+    assert(binder_tag_get(&ht, 0, &tag));
+    assert(tag->handle == 0);
+    assert(!strcmp(tag->interface, "IActivityManager"));
+    assert(binder_tag_get(&ht, 172, &tag));
+    assert(binder_tag_get(&ht, 2245, &tag));
+    assert(tag->handle == 2245);
+    assert(!strcmp(tag->interface, "IActivityThread"));
 
     return EXIT_SUCCESS;
 }
