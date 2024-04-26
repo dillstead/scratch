@@ -1,4 +1,4 @@
-// gcc -Werror -pedantic -std=c99 -Wall -Wextra -Wno-error=unused-parameter -Wno-error=unused-function -Wno-error=unused-variable -Wconversion -Wno-error=sign-conversion -fsanitize=address,undefined -g3 -o delim_split delim_split.c
+// gcc -Werror -pedantic -std=c99 -Wall -Wextra -O2 -o delim_split delim_split.c
 #define _GNU_SOURCE
 #include <stdlib.h>
 #include <assert.h>
@@ -13,7 +13,7 @@ static size_t delim_split(char *str, char delim, char **toks, size_t max_toks)
     char nextc = '\0';
 
     memset(toks, 0, sizeof *toks * num_toks);
-    while (start < end  && num_toks < max_toks)
+    while (start < end && num_toks < max_toks)
     {
         char *next = strchrnul(start, delim);
         nextc = *next;
