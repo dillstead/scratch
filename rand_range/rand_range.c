@@ -8,7 +8,7 @@
 static int randint(uint64_t *rng, int lo, int hi)
 {
     *rng = *rng * 0x3243f6a8885a308d + 1;
-    return (int) (((*rng>>32) * (hi - lo)) >>32) + lo;
+    return (int) (((*rng >> 32) * (uint64_t) (hi - lo)) >> 32) + lo;
 }
 
 static void generate(uint64_t seed, int *nums, int len, int lo, int hi)
@@ -31,10 +31,10 @@ int main(int argc, char **argv)
     int max_nums = atoi(argv[1]);
     int low = atoi(argv[2]);
     int high = atoi(argv[3]);
-    struct arena arena = new_arena(((size_t) max_nums * sizeof(int) << 2));
+    struct arena arena = new_arena((max_nums * sizeof(int) << 2));
     int *nums = new(&arena, int, (size_t) max_nums);
 
-    generate(time(NULL), nums, max_nums, low, high);
+    generate((uint64_t) time(NULL), nums, max_nums, low, high);
     for (int i = 0; i < max_nums; i++)
     {
         printf("%d\n", nums[i]);
