@@ -1,4 +1,4 @@
-// gcc -Werror -std=c11 -Wall -Wextra -Wno-error=unused-parameter -Wno-error=unused-function -Wno-error=unused-variable -Wconversion -Wno-error=sign-conversion -fsanitize=address,undefined -I ../../types -I../../arena -g3 -o io_uring_cp ../../arena/arena.c io_uring_cp.c
+// gcc -Werror -std=c11 -Wall -Wextra -I ../../types -I../../arena -O2 -o io_uring_cp ../../arena/arena.c io_uring_cp.c
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <fcntl.h>
