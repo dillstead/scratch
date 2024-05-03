@@ -1,6 +1,7 @@
-// gcc -Werror -pedantic -std=c11 -Wall -Wextra -O2 -I../arena -o chooser ../arena/arena.c chooser.c
+// gcc -Werror -pedantic -std=c11 -Wall -Wextra -O2 -I../arena -I ../types -o chooser ../arena/arena.c chooser.c
 #include <stdio.h>
 #include <stdlib.h>
+#include "types.h"
 #include "arena.h"
 
 static int count;
@@ -37,7 +38,7 @@ int main(int argc, char **argv)
     int max_choices = atoi(argv[1]);
     int max_nums = atoi(argv[2]);
     struct arena arena = new_arena(((size_t) max_nums * sizeof(int)) << 2);
-    int *nums = new(&arena, int, (size_t) max_nums);
+    int *nums = new(&arena, int, max_nums);
 
     for (int i = 0; i < max_nums; i++)
     {

@@ -1,4 +1,4 @@
-// gcc -Werror -pedantic -std=c11 -Wall -Wextra -O2 -I../arena -o rand_range ../arena/arena.c rand_range.c
+// gcc -Werror -std=c11 -Wall -Wextra -O2 -I../types -I../arena -o rand_range ../arena/arena.c rand_range.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>

@@ -4,18 +4,21 @@
 #include <assert.h>
 #include "arena.h"
 
-struct arena new_arena(size_t cap)
+struct arena new_arena(size cap)
 {
     struct arena arena = { 0 };
     
-    arena.beg = malloc(cap);
+    arena.beg = malloc((size_t) cap);
     arena.end = arena.beg ? arena.beg + cap : 0;
     return arena;
 }
 
-void *alloc(struct arena *a, size_t size, size_t align, size_t count)
+void *alloc(struct arena *a, size sz, size align, size count)
 {
-    size_t pad = (uintptr_t) a->end & (align - 1);
-    assert(count < ((uintptr_t) (a->end - a->beg) - pad) / size);
-    return memset(a->end -= size * count + pad, 0, size * count);
+    size padding = -(iptr) a->beg & (align - 1);
+    size available = a->end - a->beg - padding;
+    assert(available >= 0 && count <=  available / sz);
+    void *p = a->beg + padding;
+    a->beg += padding + count * sz;
+    return memset(p, 0, (size_t) (count * sz));
 }
