@@ -8,6 +8,7 @@ struct arena new_arena(size cap)
 {
     struct arena arena = { 0 };
     
+    assert(cap > 0);
     arena.beg = malloc((size_t) cap);
     arena.end = arena.beg ? arena.beg + cap : 0;
     return arena;
