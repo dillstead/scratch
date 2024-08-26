@@ -75,40 +75,91 @@ int unpack(struct bit_packer *packer, uint8_t *input, int bits, uint16_t *output
     return pos;
 }
     
-static bool test_pack(struct index_bits *input, int ilen,
+static bool test_pack(uint16_t *input, int *bits, int blen,
                       uint8_t *expect, int elen)
 {
     struct bit_packer packer = {0};
-    uint8_t output[128];
-    int e = 0;
+    uint8_t output[4] = {0};
+    int len = 0;
 
-    for (int i = 0; i < ilen; i++)
+    for (int b = 0; b < blen; b++)
     {
-        e += pack(&packer, input[i].index, input[i].bits, output + e);
+        len += pack(&packer, input[b], bits[b], output + len);
     }
-    e += flush(&packer, output + e);
-    return e == elen && memcmp(output, expect, e) == 0;
+    len += flush(&packer, output + len);
+    return len == elen && memcmp(output, expect, len) == 0;
+}
+
+static bool test_unpack(uint8_t *input, int *bits, int blen,
+                        uint16_t *expect)
+{
+    struct bit_packer packer = {0};
+    uint16_t output[2] = {0};
+    int len = 0;
+
+    for (int b = 0; b < blen; b++)
+    {
+        len += unpack(&packer, input + len, bits[b], output + b);
+    }
+    return memcmp(output, expect, blen * sizeof(uint16_t)) == 0;
 }
 
 int main(void)
 {
-    assert(test_pack((struct index_bits[]) {{0x8001, 16}, {0x8001, 16}}, 2,
+    assert(test_pack((uint16_t[]) {0x8001, 0x8001},
+                     (int[]) {16, 16}, 2,
                      (uint8_t[]) {0x80, 0x01, 0x80, 0x01}, 4));
-    assert(test_pack((struct index_bits[]) {{0x8001, 16},  {0x1001, 13}}, 2,
+    assert(test_pack((uint16_t[]) {0x8001, 0x1001},
+                     (int []) {16, 13}, 2,
                      (uint8_t[]) {0x80, 0x01, 0x80, 0x08}, 4));
-    assert(test_pack((struct index_bits[]) {{0x8001, 16}, {0x401, 11}}, 2,
+    assert(test_pack((uint16_t[]) {0x8001, 0x401},
+                     (int []) {16, 11}, 2,
                      (uint8_t[]) {0x80, 0x01, 0x80, 0x20}, 4));
-    assert(test_pack((struct index_bits[]) {{0x1001, 13}, {0x8001, 16}}, 2,
+    assert(test_pack((uint16_t[]) {0x1001, 0x8001, 16},
+                     (int []) {13, 16}, 2,
                      (uint8_t[]) {0x80, 0x0C, 0x00, 0x08}, 4));
-    assert(test_pack((struct index_bits[]) {{0x1001, 13},  {0x1001, 13}}, 2,
+    assert(test_pack((uint16_t[]) {0x1001, 0x1001},
+                     (int []) {13, 13}, 2,
                      (uint8_t[]) {0x80, 0x0C, 0x00, 0x40}, 4));
-    assert(test_pack((struct index_bits[]) {{0x1001, 13}, {0x401, 11}}, 2,
+    assert(test_pack((uint16_t[]) {0x1001, 0x401},
+                     (int []) {13, 11}, 2,
                      (uint8_t[]) {0x80, 0x0C, 0x01}, 3));
-    assert(test_pack((struct index_bits[]) {{0x401, 11}, {0x8001, 16}}, 2,
+    assert(test_pack((uint16_t[]) {0x401, 0x8001},
+                     (int []) {11, 16}, 2,
                      (uint8_t[]) {0x80, 0x30, 0x00, 0x20}, 4));
-    assert(test_pack((struct index_bits[]) {{0x401, 11},  {0x1001, 13}}, 2,
+    assert(test_pack((uint16_t[]) {0x401, 0x1001},
+                     (int []) {11, 13}, 2,
                      (uint8_t[]) {0x80, 0x30, 0x01}, 3));
-    assert(test_pack((struct index_bits[]) {{0x401,11}, {0x401, 11}}, 2,
+    assert(test_pack((uint16_t[]) {0x401, 0x401},
+                     (int []) {11, 11}, 2,
                      (uint8_t[]) {0x80, 0x30, 0x04}, 3));
+
+    assert(test_unpack((uint8_t[]) {0x80, 0x01, 0x80, 0x01},
+                       (int []) {16, 16}, 2,
+                       (uint16_t []) {0x8001, 0x8001}));
+    assert(test_unpack((uint8_t[]) {0x80, 0x01, 0x80, 0x08},
+                       (int []) {16, 13}, 2,
+                       (uint16_t[]) {0x8001, 0x1001}));
+    assert(test_unpack((uint8_t[]) {0x80, 0x01, 0x80, 0x20},
+                       (int []) {16, 11}, 2,
+                       (uint16_t[]) {0x8001, 0x401}));
+    assert(test_unpack((uint8_t[]) {0x80, 0x0C, 0x00, 0x08},
+                       (int []) {13, 16}, 2,
+                       (uint16_t[]) {0x1001, 0x8001, 16}));
+    assert(test_unpack((uint8_t[]) {0x80, 0x0C, 0x00, 0x40},
+                       (int []) {13, 13}, 2,
+                       (uint16_t[]) {0x1001, 0x1001}));
+    assert(test_unpack((uint8_t[]) {0x80, 0x0C, 0x01},
+                       (int []) {13, 11}, 2,
+                       (uint16_t[]) {0x1001, 0x401}));
+    assert(test_unpack((uint8_t[]) {0x80, 0x30, 0x00, 0x20},
+                       (int []) {11, 16}, 2,
+                       (uint16_t[]) {0x401, 0x8001}));
+    assert(test_unpack((uint8_t[]) {0x80, 0x30, 0x01},
+                       (int []) {11, 13}, 2,
+                       (uint16_t[]) {0x401, 0x1001}));
+    assert(test_unpack((uint8_t[]) {0x80, 0x30, 0x04},
+                       (int []) {11, 11}, 2,
+                       (uint16_t[]) {0x401, 0x401}));
     return EXIT_SUCCESS;
 }
