@@ -32,7 +32,7 @@ int pack(struct bit_packer *packer, uint16_t input, int bits, uint8_t *output)
         bits -= 8;
         output[pos++] = (uint8_t) (input >> bits);
     }
-    // Remainder 
+
     packer->byte = (uint8_t) (input << (8 - bits));
     packer->used = bits;
     return pos;
@@ -63,7 +63,7 @@ int unpack(struct bit_packer *packer, uint8_t *input, int bits, uint16_t *output
     *output = ((uint16_t) packer->byte) << (bits - 8);
     bits -= packer->used;
     packer->byte = input[pos++];
-    if (bits > 8)
+    if (bits >= 8)
     {
         *output |= ((uint16_t) packer->byte) << (bits - 8);
         bits -= 8;        
