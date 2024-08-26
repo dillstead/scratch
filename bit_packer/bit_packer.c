@@ -63,7 +63,7 @@ int unpack(struct bit_packer *packer, uint8_t *input, int bits, uint16_t *output
     *output = ((uint16_t) packer->byte) << (bits - 8);
     bits -= packer->used;
     packer->byte = input[pos++];
-    if (bits >= 8)
+    if (bits > 8)
     {
         *output |= ((uint16_t) packer->byte) << (bits - 8);
         bits -= 8;        
