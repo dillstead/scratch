@@ -2,15 +2,15 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-// gcc -std=gnu11 -Werror -Wall -Wextra -Wno-error=unused-parameter -Wno-error=unused-function -Wno-error=unused-variable -Wconversion -Wno-error=sign-conversion -fsanitize=address,undefined -g3 -o coro coro.c
-    
+// gcc -std=gnu11 -O2 -o coro coro.c
+
 // Coroutines from a bit of assembly
 //
 // The interface is a struct (coro) and a function (yield). Coroutines
-// pass values between each other through yield. The first value is
+// pass values between each other through _yield. The first value is
 // passed as the argument to the coroutine function, and the rest are
 // returned from yield(). Coroutine functions must not return.
-//
+// 
 // This is free and unencumbered software released into the public domain.
 
 // ARM port of coroutine implementation:
@@ -20,19 +20,21 @@ typedef struct {
     void **rsp;
 } coro;
 
+extern void *_yield(coro *c, void *arg);
+
 __attribute((naked))
 static void *yield(coro *c, void *arg)
 {
     (void) c;
     (void) arg;
     asm (
-        "push    { r4-r11, lr }" // save context
-        "ldr     r2 [r0]       " // switch stacks
-        "str     sp, [r0]      "
-        "mov     sp, r2        "
-        "pop     { r4-r11, lr }" // restore context
-        "mov     r0, r1        " // pass arg as first arg and return value
-        "mov     pc, lr        " // switch to other coroutine
+        "push    { r4-r11, lr }\n" // save context
+        "ldr     r2, [r0]      \n" // switch stacks
+        "str     sp, [r0]      \n"
+        "mov     sp, r2        \n"
+        "pop     { r4-r11, lr }\n" // restore context
+        "mov     r0, r1        \n" // pass arg as first arg and return value
+        "mov     pc, lr        \n" // switch to other coroutine
     );
 }
 
@@ -69,10 +71,11 @@ static void *alloc(arena *a, size objsize, size align, size count)
 static coro *newcoro(arena *perm, void corofunc(void *))
 {
     coro *c = new(perm, coro, 1);
-    size cap = 1<<10;  // tiny coro stacks
-    c->rsp = (void **)alloc(perm, 16, 16, cap/16) + (cap - 9 * 4);
+    size cap = 1<<10;
+    c->rsp = alloc(perm, 8, 8, cap/8);
     // Seed the stack with corofunc as lr
-    *(c->rsp + 8) = (void *)corofunc;
+    *(c->rsp + cap/4 - 1) = (void *)corofunc;
+    c->rsp += cap/4 - 9;
     return c;
 }
 
@@ -180,7 +183,7 @@ typedef struct {
     coro *prev;  // calling coroutine
 } query;
 
-// Predicate filter for one prime number. Yield once with a filterctx to
+// Predicate filter for one prime number. yield once with a filterctx to
 // configure it, then yield with query objects.
 static void filter(void *arg)
 {
@@ -222,7 +225,7 @@ static void primes(arena scratch, i32 limit)
         }
     }
 }
-// 2 -> 3 
+
 int main(void)
 {
     size cap = 1<<24;
