@@ -20,8 +20,6 @@ typedef struct {
     void **rsp;
 } coro;
 
-extern void *_yield(coro *c, void *arg);
-
 __attribute((naked))
 static void *yield(coro *c, void *arg)
 {
