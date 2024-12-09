@@ -16,7 +16,6 @@ while i < j:
         j -= 1
     else: 
         i += 1
-print(disk)        
 sum = 0
 for i in range(j + 1):
     sum += (i * disk[i])
