@@ -2,19 +2,16 @@ import fileinput
 
 mvs = [(-1, 0), (0, 1), (1, 0), (0, -1)]
 
-def search(x, y, pth):
+def search(x, y):
     cur = grid[x][y]
     if cur == 9:
-        pth.append((x, y, cur))
         ends.add((x, y))
-    pth.append((x, y, cur))
     for mv in mvs:
         if grid[x + mv[0]][y + mv[1]] == cur + 1:
             save = grid[x][y]
             grid[x][y] = -1
-            search(x + mv[0], y + mv[1], pth)
+            search(x + mv[0], y + mv[1])
             grid[x][y] = save
-    pth.pop()
             
 grid = []
 heads = []
@@ -31,7 +28,7 @@ with fileinput.input() as fin:
 sum = 0
 for head in heads:
     ends = set()
-    search(head[0], head[1], [])
+    search(head[0], head[1])
     sum += len(ends)
 print(sum)
 
