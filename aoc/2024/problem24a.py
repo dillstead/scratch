@@ -1,5 +1,4 @@
 import fileinput
-from collections import namedtuple
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Callable
@@ -29,17 +28,14 @@ with fileinput.input() as fin:
         a, op, b = inp.split(' ')
         blocks.append(Block(a, b, c, ops[op]))
 while True:
-    done = True
+    prop = False
     for block in blocks:
         a, b = signals[block.a], signals[block.b]
         if not block.done and a != -1 and b != -1:
             signals[block.c] = block.op(a, b)
             block.done = True
-            done = False
-    if done:
+            prop = True
+    if not prop:
         break
 signals = dict(sorted(filter(lambda item: item[0].startswith('z'), signals.items()), reverse=True))
 print(int(''.join([str(signals[k]) for k in signals.keys()]), 2))
-
-
-
