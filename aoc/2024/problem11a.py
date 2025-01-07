@@ -12,7 +12,7 @@ for i in range(25):
         else:
             news.append(str(int(num) * 2024))
     nums = news
-print(len(news))
+print(len(nums))
 
 
 
