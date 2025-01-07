@@ -1,8 +1,7 @@
 import sys
 
 nums = sys.stdin.read().strip().split()
-print(nums)
-for i in range(25)):
+for i in range(25):
     news = []
     for num in nums:
         if num == '0':
@@ -14,5 +13,8 @@ for i in range(25)):
             news.append(str(int(num) * 2024))
     nums = news
 print(len(news))
+
+
+
 
 
