@@ -15,7 +15,7 @@ def check_design(design):
 with fileinput.input() as fin:
     for line in fin:
         if line.isspace():
-            break;
+            break
         patterns = [p.strip() for p in line.split(',')]
     npossible = set()
     possible = 0
