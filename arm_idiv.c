@@ -1,4 +1,4 @@
-// gcc -Werror -std=gnu99 -Wall -Wextra -fno-builtin -nostdlib -O2 -o arm_uimod arm_uimod.c
+// gcc -Werror -std=gnu99 -Wall -Wextra -fno-builtin -nostdlib -O2 -o arm_idiv arm_idiv.c
 #include <limits.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -39,45 +39,32 @@ static long syscall3(long n, long a, long b, long c)
     return ret;
 }
 
-__attribute__((naked))
-static unsigned int ret_uidivmod(unsigned int q, unsigned int r)
-{
-    (void) q;
-    (void) r;
-    __asm(
-        "bx lr"
-        );
-}
-
-static void uidivmod(unsigned int n, unsigned int d, unsigned int *q, unsigned int *r)
-{
-    *q = 0;
-    *r = 0;
-    if (d == 0)
-    {
-        return;
-    }
-    if (d <= n)
-    {
-        while (n >= d)
-        {
-            n -= d;
-            (*q)++;
-        }
-    }
-    *r = n;
-}
-
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
-unsigned int __aeabi_uidivmod(unsigned int n, unsigned int d)
+int __aeabi_idiv(int n, int d)
 {
-    unsigned int q;
-    unsigned int r;
-
-    uidivmod(n, d, &q, &r);
-    return ret_uidivmod(q, r);
-
+    if (d == 0)
+    {
+        return 0;
+    }
+    int q = 0;
+    int s = 1;
+    if (n < 0)
+    {
+        s *= -1;
+        n = -n;
+    }
+    if (d < 0)
+    {
+        s *= -1;
+        d = -d;
+    }
+    while (n >= d)
+    {
+        n -= d;
+        q++;
+    }
+    return q * s;
 }
 #pragma GCC diagnostic pop
 
@@ -156,11 +143,11 @@ static long slen(const char *str)
 static void start(int argc, char **argv)
 {
     (void) argc;
-    unsigned int i = (unsigned int) xatoi(argv[1]);
-    unsigned int j = (unsigned int) xatoi(argv[2]);
+    int i = xatoi(argv[1]);
+    int j = xatoi(argv[2]);
     char buf[24];
     
-    xitoa(i % j, buf);
+    xitoa(i / j, buf);
     SYSCALL3(SYS_write, 1, buf, slen(buf));
     SYSCALL3(SYS_write, 1, "\n", 1);
     SYSCALL1(SYS_exit, 0);    
