@@ -68,18 +68,15 @@ static void uidivmod(unsigned int n, unsigned int d, unsigned int *q, unsigned i
     *r = n;
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-function"
-unsigned int __aeabi_uidivmod(unsigned int n, unsigned int d)
+__attribute__((used))
+static unsigned int __aeabi_uidivmod(unsigned int n, unsigned int d)
 {
     unsigned int q;
     unsigned int r;
 
     uidivmod(n, d, &q, &r);
     return ret_uidivmod(q, r);
-
 }
-#pragma GCC diagnostic pop
 
 static int xatoi(const char *s)
 {

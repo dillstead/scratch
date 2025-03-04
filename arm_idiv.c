@@ -39,9 +39,8 @@ static long syscall3(long n, long a, long b, long c)
     return ret;
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-function"
-int __aeabi_idiv(int n, int d)
+__attribute__((used))
+static int __aeabi_idiv(int n, int d)
 {
     if (d == 0)
     {
@@ -66,7 +65,6 @@ int __aeabi_idiv(int n, int d)
     }
     return q * s;
 }
-#pragma GCC diagnostic pop
 
 static int xatoi(const char *s)
 {
