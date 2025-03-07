@@ -1,4 +1,4 @@
-// gcc -Werror -std=gnu99 -Wall -Wextra -Wno-error=unused-parameter -Wno-error=unused-function -Wno-error=unused-variable -Wconversion -Wno-error=sign-conversion -fno-builtin -nostdlib -g3 -o rand_exec rand_exec.c
+// gcc -Werror -std=gnu99 -Wall -Wextra -Wno-error=unused-parameter -Wno-error=unused-function -Wno-error=unused-variable -Wconversion -Wno-error=sign-conversion -fno-builtin -nostdlib -g3 -o rand_exec rand_exec.c -lgcc
 #include <unistd.h>
 #include <fcntl.h>
 #include <dirent.h>
@@ -32,6 +32,8 @@ enum
 #define sizeof(x)   (size) sizeof(x)
 #define countof(a)  (size)(sizeof(a) / sizeof(*(a)))
 #define lengthof(s) (countof(s) - 1)
+#define s8(s)       (struct s8){(u8 *)s, lengthof(s)}
+#define s8nul       (struct s8){(u8 *)"", 1}
 
 #define SYSCALL1(n, a)                \
     syscall1(n,(long)(a))
@@ -237,14 +239,6 @@ struct s8
     size len;
 };
 
-static struct s8 s8cstr(const char *s)
-{
-    struct s8 r = {0};
-    r.data = (u8 *) s;
-    r.len = (size) slen(s);
-    return r;
-}
-
 static struct s8 s8cpy(struct arena *a, struct s8 s)
 {
     struct s8 r = s;
@@ -266,20 +260,6 @@ static struct s8 s8cat(struct arena *a, struct s8 head, struct s8 tail)
     return head;
 }
 
-static long full_write(int fd, const u8 *s, long len)
-{
-    for (long off = 0; off < len;)
-    {
-        long r = SYSCALL3(SYS_write, fd, s + off, len - off);
-        if (r < 1)
-        {
-            return 0;
-        }
-        off += r;
-    }
-    return 1;
-}
-
 struct linux_dirent64
 {
     u64	d_ino;
@@ -289,33 +269,28 @@ struct linux_dirent64
     char d_name[];
 };
 
-static bool is_exec(struct s8 fname)
+static bool is_exec(struct arena scratch, struct s8 fname)
 {
     int fd = -1;
-    const u8 *contents = MAP_FAILED;
+    Elf32_Ehdr ehdr;
     bool exec = false;
-    
-    if ((fd = (int) SYSCALL2(SYS_open, fname.data, O_RDONLY)) < 0)
-    {
-        goto cleanup;
-    }
-    if ((contents = (const u8 *) SYSCALL6(SYS_mmap2, NULL, PGSIZE, PROT_READ,
-                                          MAP_PRIVATE, fd, 0)) ==  MAP_FAILED)
+
+    fname = s8cat(&scratch, fname, s8nul);
+    if ((fd = (int) SYSCALL2(SYS_open, fname.data, O_RDONLY)) < 0
+        || SYSCALL3(SYS_read, fd, &ehdr, sizeof(ehdr)) != sizeof(ehdr))
     {
         goto cleanup;
     }
 
-    Elf32_Ehdr *ehdr = (Elf32_Ehdr *) contents;
-    exec = ehdr->e_ident[0] == ELFMAG0
-        && ehdr->e_ident[1] == ELFMAG1
-        && ehdr->e_ident[2] == ELFMAG2
-        && ehdr->e_ident[3] == ELFMAG3
-        && ehdr->e_type == ET_EXEC
-        && ehdr->e_machine == EM_ARM
-        && ehdr->e_version == EV_CURRENT;
+    exec = ehdr.e_ident[0] == ELFMAG0
+        && ehdr.e_ident[1] == ELFMAG1
+        && ehdr.e_ident[2] == ELFMAG2
+        && ehdr.e_ident[3] == ELFMAG3
+        && ehdr.e_type == ET_EXEC
+        && ehdr.e_machine == EM_ARM
+        && ehdr.e_version == EV_CURRENT;
 
 cleanup:
-    SYSCALL2(SYS_munmap, contents, PGSIZE);
     SYSCALL1(SYS_close, fd);
     return exec;
 }
@@ -349,17 +324,16 @@ static bool pick_exec(struct arena *perm, struct arena scratch, struct s8 *ename
     unsigned int cnt = 1;
     while ((nbytes = SYSCALL3(SYS_getdents64, dfd, dents, sizeof(dents))) > 0)
     {
-        struct arena stmp = scratch;
         long pos = 0;
         while (pos < nbytes)
         {
+            struct arena stmp = scratch;
             struct linux_dirent64 *dent = (struct linux_dirent64 *) (dents + pos);
             if (dent->d_type == DT_REG)
             {
                 struct s8 fname = { (u8 *) dent->d_name, slen(dent->d_name) };
-                fname = s8cat(&stmp, fname, s8cstr(""));
-                fname = s8cat(&stmp, s8cstr("./"), fname);
-                if (is_exec(fname))
+                fname = s8cat(&stmp, s8("./"), fname);
+                if (is_exec(stmp, fname))
                 {
                     if (prand_next(&state) % cnt == 0)
                     {
@@ -405,8 +379,11 @@ static void start(int argc, char **argv)
     {
         goto cleanup;
     }
-    full_write(1, fname.data, fname.len);
-    full_write(1, (const u8 *) "\n", 1);
+    if (SYSCALL3(SYS_write, 1, fname.data, fname.len) < fname.len
+        || SYSCALL3(SYS_write, 1, "\n", 1) < 1)
+    {
+        goto cleanup;
+    }
     rc = 0;
 
 cleanup:
