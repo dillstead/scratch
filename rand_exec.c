@@ -354,6 +354,7 @@ cleanup:
     return picked;
 }
 
+__attribute__((used))
 static void start(int argc, char **argv)
 {
     (void) argc;
@@ -395,14 +396,10 @@ cleanup:
 __attribute__((naked, noreturn))
 void _start(void)
 {
-    register int argc asm("r0");
-    register char **argv asm("r1");
-    
-    __asm volatile (
-        "ldr     r0, [sp]\n"
-        "add     r1, sp, #4\n"
-        :
-        :
-        :"r0", "r1");
-    start(argc, argv);
+    __asm(
+        "ldr r0, [sp]\n"
+        "add r1, sp, #4\n"
+        "b   start\n"
+        );
 }
+
