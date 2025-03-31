@@ -49,6 +49,27 @@ static unsigned int ret_uidivmod(unsigned int q, unsigned int r)
         );
 }
 
+#ifdef FAST
+static void uidivmod(unsigned int n, unsigned int d, unsigned int *q, unsigned int *r)
+{
+    *q = 0;
+    *r = 0;
+    if (d == 0)
+    {
+        return;
+    }
+
+    for (int i = 31; i >= 0; i--)
+    {
+        if (d <= (n >> i))
+        {
+            n -= (d << i);
+            (*q) |= 0x1U << i;
+        }
+    }
+    *r = n;
+}
+#else
 static void uidivmod(unsigned int n, unsigned int d, unsigned int *q, unsigned int *r)
 {
     *q = 0;
@@ -67,6 +88,7 @@ static void uidivmod(unsigned int n, unsigned int d, unsigned int *q, unsigned i
     }
     *r = n;
 }
+#endif
 
 __attribute__((used))
 static unsigned int __aeabi_uidivmod(unsigned int n, unsigned int d)

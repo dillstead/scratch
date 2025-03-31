@@ -39,13 +39,41 @@ static long syscall3(long n, long a, long b, long c)
     return ret;
 }
 
+#ifdef FAST
 __attribute__((used))
 static int __aeabi_idiv(int n, int d)
 {
+    int s = (n >> 31) ^ (d >> 31) ? -1 : 1;
+    unsigned int _n = (unsigned int) n;
+    unsigned int _d = (unsigned int) d;
+
     if (d == 0)
     {
         return 0;
     }
+    if (n < 0)
+    {
+        _n = -_n;
+    }
+    if (d < 0)
+    {
+        _d = -_d;
+    }
+    unsigned int q = 0;
+    for (int i = 31; i >= 0; i--)
+    {
+        if (_d <= (_n >> i))
+        {
+            _n -= (_d << i);
+            q |= 0x1U << i;
+        }
+    }
+    return s * (int) q;
+}
+#else
+__attribute__((used))
+static int __aeabi_idiv(int n, int d)
+{
     int q = 0;
     int s = 1;
     if (n < 0)
@@ -65,6 +93,7 @@ static int __aeabi_idiv(int n, int d)
     }
     return q * s;
 }
+#endif
 
 static int xatoi(const char *s)
 {
