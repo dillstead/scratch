@@ -60,7 +60,7 @@ static long syscall3(long n, long a, long b, long c)
 static char *uitoa(unsigned int i, char *s, int base, const char *digits)
 {
     int len = 1;
-    int t = i;
+    unsigned int t = i;
     while (i /= base) len++;
     char *beg = s + len;
     *beg = '\0';

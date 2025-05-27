@@ -9,7 +9,7 @@
 static char *uitoa(unsigned int i, char *s, int base, const char *digits)
 {
     int len = 1;
-    int t = i;
+    unsigned int t = i;
     while (i /= base) len++;
     char *beg = s + len;
     *beg = '\0';
@@ -23,10 +23,15 @@ static char *uitoa(unsigned int i, char *s, int base, const char *digits)
 int main(void)
 {
     char buf[64];
+    assert(!strcmp(duitoa(8, buf), "8"));
     assert(!strcmp(duitoa(0, buf), "0"));
     assert(!strcmp(duitoa(87658, buf), "87658"));
     assert(!strcmp(duitoa(2147483647, buf), "2147483647"));
+    assert(!strcmp(duitoa(3204448205, buf), "3204448205"));
+    assert(!strcmp(xuitoa(8, buf), "8"));
+    assert(!strcmp(xuitoa(0, buf), "0"));
     assert(!strcmp(xuitoa(87658, buf), "1566a"));
     assert(!strcmp(xuitoa(2147483647, buf), "7fffffff"));
+    assert(!strcmp(xuitoa(0xbeffffcd, buf), "beffffcd"));
     return EXIT_SUCCESS;
 }
