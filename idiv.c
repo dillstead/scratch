@@ -63,6 +63,7 @@ int main(void)
 {
     assert(INT_MIN / 1 == idiv(INT_MIN, 1));
     assert(INT_MIN / 2 == idiv(INT_MIN, 2));
+    assert((INT_MIN + 1) / 2 == idiv((INT_MIN + 1), 2));
     assert(INT_MIN / 3 == idiv(INT_MIN, 3));
     assert(INT_MIN / -2 == idiv(INT_MIN, -2));
     assert(INT_MIN / -3 == idiv(INT_MIN, -3));
