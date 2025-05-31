@@ -40,33 +40,58 @@ static long syscall3(long n, long a, long b, long c)
 }
 
 #ifdef FAST
+static void uidivmod(unsigned int n, unsigned int d, unsigned int *q, unsigned int *r)
+{
+    *q = 0;
+    *r = 0;
+    if (d == 0)
+    {
+        return;
+    }
+
+    for (int i = 31; i >= 0; i--)
+    {
+        if (d <= (n >> i))
+        {
+            n -= (d << i);
+            (*q) |= 0x1U << i;
+        }
+    }
+    *r = n;
+}
+
 __attribute__((used))
 static int __aeabi_idiv(int n, int d)
 {
-    int s = (n >> 31) ^ (d >> 31) ? -1 : 1;
-    unsigned int _n = (unsigned int) n;
-    unsigned int _d = (unsigned int) d;
-
-    if (d == 0)
+    if (n == 0 || d == 0)
     {
         return 0;
     }
+
+    if (n == d)
+    {
+        return 1;
+    }
+
+    if (d == INT_MIN)
+    {
+        return 0;
+    }
+
+    int s = (n >> 31) ^ (d >> 31) ? -1 : 1;
+    unsigned int _d = (d < 0) ? (unsigned int) -d : (unsigned int) d;
+    unsigned int _n = (unsigned int) n;
     if (n < 0)
     {
-        _n = -_n;
+        _n = (n == INT_MIN) ? (unsigned int) INT_MAX : (unsigned int) -n;
     }
-    if (d < 0)
+
+    unsigned int q;
+    unsigned int r;
+    uidivmod(_n, _d, &q, &r);
+    if (n == INT_MIN && r + 1 == _d)
     {
-        _d = -_d;
-    }
-    unsigned int q = 0;
-    for (int i = 31; i >= 0; i--)
-    {
-        if (_d <= (_n >> i))
-        {
-            _n -= (_d << i);
-            q |= 0x1U << i;
-        }
+        q++;
     }
     return s * (int) q;
 }
