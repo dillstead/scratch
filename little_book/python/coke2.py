@@ -21,30 +21,35 @@
 """
 
 from threading_cleanup import *
+import random
 
 class Shared:
-    def __init__(self, end=10):
-        self.counter = 0
-        self.end = end
-        self.array = [0]* self.end
-        self.mutex = Semaphore(1)
+    def __init__(self, start=5, capacity=10):
+        self.cokes = Semaphore(start)
+        self.slots = Semaphore(0)
+        self.mutex = Semaphore(capacity - start)
 
-def child_code(shared):
+def consume(shared):
+    shared.cokes.wait()
+    shared.mutex.wait()
+    print(shared.cokes._value)
+    shared.mutex.release()
+    shared.slots.signal()
+        
+def produce(shared):
+    shared.slots.wait()
+    shared.mutex.wait()
+    print(shared.cokes._value)
+    shared.mutex.release()
+    shared.cokes.signal()
+
+def loop(shared, f, mu=1):
     while True:
-        shared.mutex.wait()
-        if shared.counter >= shared.end:
-            shared.mutex.signal()
-            break
-        shared.array[shared.counter] += 1
-        shared.counter += 1
-        shared.mutex.signal()
+        t = random.expovariate(1.0/mu)
+        time.sleep(t)
+        f(shared)
 
-class Histogram(dict):
-    def __init__(self, seq=[]):
-        for item in seq:
-            self[item] = self.get(item, 0) + 1
-
-shared = Shared(10000)            
-children = [Thread(child_code, shared) for i in range(2)]
-for child in children: child.join()
-print(Histogram(shared.array))
+shared = Shared()
+fs = [consume]*2 + [produce]*2
+threads = [Thread(loop, shared, f) for f in fs]
+for thread in threads: thread.join()
