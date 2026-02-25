@@ -24,17 +24,17 @@ long my_syscall2(long num, ...)
     __asm volatile(
         "push {r0-r4, lr}\n"
         "mov r1, r0\n"
-        "adr r0, ent\n"
+        "adr r0, 1f\n"
         "blx printf\n"
         "ldmia sp, {r0-r4}\n"
         "blx syscall\n"
         "mov r1, r0\n"
-        "adr r0, ex\n"
+        "adr r0, 2f\n"
         "blx printf\n"
         "mov r0, r1\n"
         "pop {r0-r4, pc}\n"
-        "ent: .asciz \"syscall enter: id %ld\\n\"\n"
-        "ex:  .asciz \"syscall exit: ret %ld\\n\"\n"
+        "1: .asciz \"syscall enter: id %ld\\n\"\n"
+        "2:  .asciz \"syscall exit: ret %ld\\n\"\n"
         );
 }
 
@@ -44,4 +44,3 @@ int main(void)
     my_syscall2(SYS_write, 1, "Hello World!\n", sizeof "Hello World!\n" - 1);
     return EXIT_SUCCESS;
 }
-
