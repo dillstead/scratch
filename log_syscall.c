@@ -62,18 +62,22 @@ long my_syscall2(long num, ...)
         "blx syscall\n"  // Return value in r0
         // Discard the shadow frame.
         "add sp, sp, #16\n"
-        // Save syscall return and setup arguments to printf.
+        // Save syscall return and errno.
         "mov r4, r0\n"
+        "blx __errno_location\n"
+        "ldr r5, [r0]\n"
+        // Setup arguments to printf.
         "mov r1, r0\n"
         "adr r0, 2f\n"
         "blx printf\n" // Ignore return
-        // Restore syscall return.
+        // Restore syscall return and errno.
+        "blx __errno_location\n"
+        "str r5, [r0]\n"
         "mov r0, r4\n"
         // Restore callee-saved registers and return to the caller.
         "pop {r4-r8, pc}\n"
         "1: .asciz \"syscall enter: id %ld\\n\"\n"
-        // TODO: Does this need to be aligned as to not end on an odd byte? 
-        "2:  .asciz \"syscall exit: ret %ld\\n\"\n"
+        "2: .asciz \"syscall exit: ret %ld\\n\"\n"
         );
 }
 
