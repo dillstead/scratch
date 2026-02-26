@@ -67,7 +67,7 @@ long my_syscall2(long num, ...)
         "blx __errno_location\n"
         "ldr r5, [r0]\n"
         // Setup arguments to printf.
-        "mov r1, r0\n"
+        "mov r1, r4\n"
         "adr r0, 2f\n"
         "blx printf\n" // Ignore return
         // Restore syscall return and errno.
