@@ -8,12 +8,12 @@
 
 long my_syscall1(long num, ...)
 {
-    printf("%s enter: id %ld\n", __func__, num);
+    printf("%s enter: id %ld, %d\n", __func__, num, errno);
     va_list ap;
     va_start(ap, num);
     long ret = syscall(num, ap);
     va_end(ap);
-    printf("%s exit: ret %d\n", __func__, ret);
+    printf("%s exit: ret %d, %d\n", __func__, ret, errno);
     return ret;
 }
 
@@ -33,10 +33,17 @@ long my_syscall2(long num, ...)
         "mov r6, r1\n"
         "mov r7, r2\n"
         "mov r8, r3\n"
+        // Save errno
+        "blx __errno_location\n"
+        "ldr r4, [r0]\n"
         // Setup arguments and call printf.
-        "mov r1, r0\n"
         "adr r0, 1f\n"
+        "mov r1, r5\n"
+        "mov r2, r4\n"
         "blx printf\n" // Ignore return
+        // Restore errno
+        "blx __errno_location\n"
+        "str r4, [r0]\n"
         // Move possible stack arguments to a "shadow" frame 
         // so they are in their correct position when syscall 
         // is called.
@@ -69,6 +76,7 @@ long my_syscall2(long num, ...)
         // Setup arguments to printf.
         "mov r1, r4\n"
         "adr r0, 2f\n"
+        "mov r2, r5\n"
         "blx printf\n" // Ignore return
         // Restore syscall return and errno.
         "blx __errno_location\n"
@@ -76,8 +84,8 @@ long my_syscall2(long num, ...)
         "mov r0, r4\n"
         // Restore callee-saved registers and return to the caller.
         "pop {r4-r8, pc}\n"
-        "1: .asciz \"syscall enter: id %ld\\n\"\n"
-        "2: .asciz \"syscall exit: ret %ld\\n\"\n"
+        "1: .asciz \"syscall enter: id %ld, errno: %d\\n\"\n"
+        "2: .asciz \"syscall exit: ret %ld, errno: %d\\n\"\n"
         );
 }
 
