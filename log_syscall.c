@@ -17,6 +17,7 @@ long my_syscall1(long num, ...)
     return ret;
 }
 
+#define DO_DEBUG_LOG 1
 __attribute__((naked))
 long my_syscall2(long num, ...)
 {
@@ -25,7 +26,7 @@ long my_syscall2(long num, ...)
         // Preserve callee-saved registers making sure
         // to push an even number of registers to keep the
         // SP 8-byte aligned.
-        "push {r4-r8, lr}\n"  
+        "push {r4-r8, lr}\n"
         // Save parameter registers to callee-saved
         // registers so they are preserved across the 
         // call to printf.
@@ -33,6 +34,7 @@ long my_syscall2(long num, ...)
         "mov r6, r1\n"
         "mov r7, r2\n"
         "mov r8, r3\n"
+#if DO_DEBUG_LOG        
         // Save errno
         "blx __errno_location\n"
         "ldr r4, [r0]\n"
@@ -44,6 +46,7 @@ long my_syscall2(long num, ...)
         // Restore errno
         "blx __errno_location\n"
         "str r4, [r0]\n"
+#endif        
         // Move possible stack arguments to a "shadow" frame 
         // so they are in their correct position when syscall 
         // is called.
@@ -69,6 +72,7 @@ long my_syscall2(long num, ...)
         "blx syscall\n"  // Return value in r0
         // Discard the shadow frame.
         "add sp, sp, #16\n"
+#if DO_DEBUG_LOG        
         // Save syscall return and errno.
         "mov r4, r0\n"
         "blx __errno_location\n"
@@ -82,10 +86,13 @@ long my_syscall2(long num, ...)
         "blx __errno_location\n"
         "str r5, [r0]\n"
         "mov r0, r4\n"
+#endif
         // Restore callee-saved registers and return to the caller.
         "pop {r4-r8, pc}\n"
+#if DO_DEBUG_LOG        
         "1: .asciz \"syscall enter: id %ld, errno: %d\\n\"\n"
         "2: .asciz \"syscall exit: ret %ld, errno: %d\\n\"\n"
+#endif
         );
 }
 
