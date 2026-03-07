@@ -30,7 +30,6 @@ int main(void)
             map |= pos;
             tmp <<= 1;
         }
-        //printf("done\n");
         if (i == 32)
         {
             assert(map == UINT32_MAX);
