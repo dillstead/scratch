@@ -32,12 +32,16 @@ def scan_addresses(start_ip_addr, end_ip_addr, port):
         cur += 1
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
-        print("Usage: python check_pi <start_ip> <end_ip> <port>")
+    if len(sys.argv) == 2 and sys.argv[1] == "--defaults":
+        start_ip_addr = "192.168.1.1"
+        end_ip_addr = "192.168.1.255"
+        port = 22
+    elif len(sys.argv) != 4:
+        print("Usage: python3 check_pi <start_ip> <end_ip> <port>")
         sys.exit(1)
-
-    start_ip_addr = sys.argv[1]
-    end_ip_addr = sys.argv[2]
-    port = int(sys.argv[3])
+    else:
+        start_ip_addr = sys.argv[1]
+        end_ip_addr = sys.argv[2]
+        port = int(sys.argv[3])
 
     scan_addresses(start_ip_addr, end_ip_addr, port)
