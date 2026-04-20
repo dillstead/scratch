@@ -13,10 +13,15 @@ typedef ptrdiff_t  size;
 typedef size_t     usize;
 typedef intptr_t   iptr;
 
+struct s8;
+
 #define assert(c)     while (!(c)) *(volatile int *)0 = 0
 #define sizeof(x)     (size) sizeof(x)
 #define countof(a)    (size)(sizeof(a) / sizeof(*(a)))
 #define lengthof(s)   (countof(s) - 1)
+#define s8(s)         (struct s8){(u8 *)s, lengthof(s)}
+#define s8cstr(s)     (struct s8){(u8 *)s, strlen(s)}
+#define s8nul         (struct s8){(u8 *)"", 1}
 #define xset(d, c, n) __builtin_memset(d, c, n)
 #define xcpy(d, s, n) __builtin_memcpy(d, s, n)
 
@@ -40,12 +45,13 @@ enum {
 
 #define PLT_MAP_FAILED ((void *) -1)
 
-static byte *plt_mmap(size, i32, i32);
+static u8 *plt_mmap(size, i32, i32);
+static b32 plt_write(i32, u8 *, size);
 static void plt_exit(i32 rc);
 
 struct arena {
-    byte *beg;
-    byte *end;
+    u8 *beg;
+    u8 *end;
     size sz;
 };
 
@@ -63,18 +69,89 @@ static void *alloc(struct arena *a, size sz, size align, size count)
         oom();
     }
     
-    byte *p = a->beg + pad;
+    u8 *p = a->beg + pad;
     a->beg += pad + count * sz;
 
     return xset(p, 0, (usize) (count * sz));
 }
 
+struct buf
+{
+    u8 *buf;
+    size cap;
+    size len;
+    int fd;
+    int err;
+};
+
+static struct buf out = { (u8[1 << 8]) { 0 }, 1 << 8, 0, 1, 0 };
+static struct buf err = { (u8[1 << 8]) { 0 }, 1 << 8, 0, 2, 0 };
+
+static void flush(struct buf *b)
+{
+    b->err |= b->fd < 0;
+    if (!b->err && b->len) {
+        b->err |= plt_write(b->fd, b->buf, b->len) < b->len;
+        b->len = 0;
+    }
+}
+
+static void append(struct buf *b, u8 *src, size len)
+{
+    u8 *end = src + len;
+    while (!b->err && src < end) {
+        size left = end - src;
+        size avail = b->cap - b->len;
+        size amt = avail < left ? avail : left;
+
+        for (size i = 0; i < amt; i++) {
+            b->buf[b->len + i] = src[i];
+        }
+        b->len += amt;
+        src += amt;
+
+        if (amt < left) {
+            flush(b);
+        }
+    }
+}
+
+struct s8
+{
+    u8 *data;
+    size len;
+};
+
+static struct s8 s8cpy(struct arena *a, struct s8 s)
+{
+    struct s8 r = s;
+    r.data = new(a, u8, s.len);
+    if (r.len)
+    {
+        xcpy(r.data, s.data, (usize) r.len);
+    }
+    return r;
+}
+
+static struct s8 s8cat(struct arena *a, struct s8 head, struct s8 tail)
+{
+    if (!head.data || head.data + head.len != a->beg)
+    {
+        head = s8cpy(a, head);
+    }
+    head.len += s8cpy(a, tail).len;
+    return head;
+}
+
 static i32 re_(i32 argc, u8 **argv, struct arena *a)
 {
+    if (argc < 3) {
+        
+    }
     return 0;
 }
 
-static i32 re(i32 argc, u8 **argv, byte *mem, size cap)
+static i32 re(i32 argc, u8 **argv, u8 *mem, size cap)
 {
     struct arena a = { mem, mem + cap, cap };
 
@@ -86,9 +163,14 @@ static i32 re(i32 argc, u8 **argv, byte *mem, size cap)
 #include <sys/mman.h>
 #include <unistd.h>
 
-static byte *plt_mmap(size sz, i32 prot, i32 flgs)
+static u8 *plt_mmap(size sz, i32 prot, i32 flgs)
 {
-    return (byte *) mmap(0, to_usize(sz), prot, flgs, -1, 0);
+    return (u8 *) mmap(0, to_usize(sz), prot, flgs, -1, 0);
+}
+
+static b32 plt_write(i32 fd, u8 *buf, size len)
+{
+    return len == write(fd, buf, to_usize(len));
 }
 
 static void plt_exit(i32 rc)
@@ -99,7 +181,7 @@ static void plt_exit(i32 rc)
 int main(int argc, char **argv)
 {
     size cap = (size) 1 << 24;
-    byte *mem = mmap(0, to_usize(cap), PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
+    u8 *mem = mmap(0, to_usize(cap), PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
 
     i32 rc = re(argc, (u8 **) argv, mem, cap);
     _exit(EXIT_SUCCESS);
