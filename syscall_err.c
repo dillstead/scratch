@@ -1,4 +1,7 @@
+#define _GNU_SOURCE  
 #include <stdio.h>
+#include <unistd.h>
+#include <sys/syscall.h>
 #include <stdlib.h>
 #include <syscall.h>
 #include <sys/types.h>
@@ -29,6 +32,8 @@ int main(void)
 {
     printf("%d\n", SYSCALL3(SYS_open, "foo", O_RDONLY, 0666));
     printf("%d\n", open("foo", O_RDONLY, 0666));
+    printf("%d\n", errno);
+    printf("%d\n", syscall(SYS_open, "foo", O_RDONLY, 0666));
     printf("%d\n", errno);
 }
 
